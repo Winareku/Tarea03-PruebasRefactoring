@@ -16,7 +16,7 @@ public abstract class IncidentHandler {
         }
     }
 
-    protected abstract boolean canHandle(Incident incident);
+    public abstract boolean canHandle(Incident incident);
 
-    protected abstract void process(Incident incident);
+    public abstract void process(Incident incident);
 }
