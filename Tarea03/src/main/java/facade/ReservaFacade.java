@@ -2,48 +2,71 @@ package facade;
 
 import main.enums.*;
 import main.*;
-import singleton.NotificationManager;
+import strategy.EmailNotification;
+import strategy.INotification;
 import java.util.Date;
 
 public class ReservaFacade {
     private DisponibilidadService disponibilidadService;
     private PreciosService preciosService;
-    private PagoService pagoService;
     private PoliticasService politicasService;
+    private INotification notificationService;
 
     public ReservaFacade() {
         this.disponibilidadService = new DisponibilidadService();
         this.preciosService = new PreciosService();
-        this.pagoService = new PagoService();
         this.politicasService = new PoliticasService();
+        this.notificationService = new EmailNotification();
     }
 
     public Reserva realizarReserva(Unidad unidad, Huesped huesped, Date fechaInicio, Date fechaFin) {
-        if (!politicasService.verificarPoliticas(unidad, huesped)) {
-            System.out.println("El huésped no cumple con las políticas");
-            return null;
-        }
-
-        if (!disponibilidadService.verificarDisponibilidad(unidad, fechaInicio, fechaFin)) {
-            System.out.println("La unidad no está disponible");
+        if (!cumpleRequisitos(unidad, huesped, fechaInicio, fechaFin)) {
             return null;
         }
 
         double precioTotal = preciosService.calcularPrecioTotal(unidad, fechaInicio, fechaFin);
 
-        if (!pagoService.procesarPago(precioTotal, "tarjeta")) {
-            System.out.println("Error al procesar el pago");
+        if (!procesarPago(precioTotal)) {
             return null;
         }
 
-        disponibilidadService.bloquearUnidad(unidad, fechaInicio, fechaFin);
+        return finalizarReserva(unidad, huesped, fechaInicio, fechaFin, precioTotal);
+    }
 
-        Reserva reserva = new Reserva(unidad, huesped, fechaInicio, fechaFin, precioTotal);
+    private boolean cumpleRequisitos(Unidad unidad, Huesped huesped, Date fechaInicio, Date fechaFin) {
+        if (!politicasService.verificarPoliticas(unidad, huesped)) {
+            System.out.println("El huésped no cumple con las políticas");
+            return false;
+        }
+
+        if (!disponibilidadService.verificarDisponibilidad(unidad)) {
+            System.out.println("La unidad no está disponible");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean procesarPago(double precioTotal) {
+        // Logica inlined de PagoService.procesarPago
+        System.out.println("Procesando pago de $" + precioTotal + " con tarjeta");
+        boolean pagoExitoso = true; // Simulación
+
+        if (!pagoExitoso) {
+            System.out.println("Error al procesar el pago");
+            return false;
+        }
+        return true;
+    }
+
+    private Reserva finalizarReserva(Unidad unidad, Huesped huesped, Date fechaInicio, Date fechaFin,
+            double precioTotal) {
+        disponibilidadService.bloquearUnidad(unidad);
+
+        DatosReserva datosReserva = new DatosReserva(unidad, huesped, fechaInicio, fechaFin, precioTotal);
+        Reserva reserva = new Reserva(datosReserva);
         huesped.realizarReserva(reserva);
 
-        NotificationManager.getInstance().sendNotification(
-                "Reserva confirmada para " + unidad.getId(),
-                huesped.getEmail());
+        notificationService.send("Reserva confirmada para " + unidad.getId(), huesped.getEmail());
 
         return reserva;
     }
@@ -53,7 +76,11 @@ public class ReservaFacade {
         double penalizacion = politicasService.calcularPenalizacion(reserva, ahora);
         double reembolso = reserva.getPrecioTotal() - penalizacion;
 
-        if (pagoService.procesarReembolso(reembolso)) {
+        // Logica inlined de PagoService.procesarReembolso
+        System.out.println("Procesando reembolso de $" + reembolso);
+        boolean reembolsoExitoso = true; // Simulación
+
+        if (reembolsoExitoso) {
             reserva.setEstado("CANCELADA");
             reserva.getUnidad().setEstado(EstadoUnidad.DISPONIBLE);
             return true;
@@ -62,7 +89,7 @@ public class ReservaFacade {
     }
 
     public boolean modificarReserva(Reserva reserva, Date nuevaFecha) {
-        if (disponibilidadService.verificarDisponibilidad(reserva.getUnidad(), nuevaFecha, reserva.getFechaFin())) {
+        if (disponibilidadService.verificarDisponibilidad(reserva.getUnidad())) {
             reserva.setFechaInicio(nuevaFecha);
             return true;
         }

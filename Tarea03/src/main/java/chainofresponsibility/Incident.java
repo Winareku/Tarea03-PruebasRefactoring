@@ -25,6 +25,18 @@ public class Incident {
         return severity;
     }
 
+    public boolean isLowSeverity() {
+        return severity <= 2;
+    }
+
+    public boolean isMediumSeverity() {
+        return severity > 2 && severity <= 5;
+    }
+
+    public boolean isHighSeverity() {
+        return severity > 5;
+    }
+
     public boolean isResolved() {
         return resolved;
     }

@@ -32,6 +32,10 @@ public class Unidad {
         return unidadTipo;
     }
 
+    public double getPrecioBase() {
+        return unidadTipo.getPrecioBase();
+    }
+
     public Propiedad getPropiedad() {
         return propiedad;
     }

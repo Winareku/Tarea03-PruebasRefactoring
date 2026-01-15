@@ -11,13 +11,13 @@ public class Reserva {
     private double precioTotal;
     private String estado;
 
-    public Reserva(Unidad unidad, Huesped huesped, Date fechaInicio, Date fechaFin, double precioTotal) {
+    public Reserva(DatosReserva datos) {
         this.id = "RES-" + System.currentTimeMillis();
-        this.unidad = unidad;
-        this.huesped = huesped;
-        this.fechaInicio = fechaInicio;
-        this.fechaFin = fechaFin;
-        this.precioTotal = precioTotal;
+        this.unidad = datos.getUnidad();
+        this.huesped = datos.getHuesped();
+        this.fechaInicio = datos.getFechaInicio();
+        this.fechaFin = datos.getFechaFin();
+        this.precioTotal = datos.getPrecioTotal();
         this.estado = "CONFIRMADA";
     }
 
