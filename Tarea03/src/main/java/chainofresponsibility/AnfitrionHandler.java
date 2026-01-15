@@ -3,12 +3,11 @@ package chainofresponsibility;
 public class AnfitrionHandler extends IncidentHandler {
     @Override
     protected boolean canHandle(Incident incident) {
-        return incident.getSeverity() <= 2;
+        return incident.isLowSeverity();
     }
 
     @Override
-    protected void process(Incident incident) {
-        System.out.println("Anfitrión manejando incidente: " + incident.getDescription());
-        incident.markResolved();
+    protected String getHandlerName() {
+        return "Anfitrión";
     }
 }
