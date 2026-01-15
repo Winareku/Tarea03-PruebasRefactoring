@@ -16,12 +16,7 @@ public abstract class IncidentHandler {
         }
     }
 
-    protected abstract boolean canHandle(Incident incident);
+    public abstract boolean canHandle(Incident incident);
 
-    protected void process(Incident incident) {
-        System.out.println(getHandlerName() + " manejando incidente: " + incident.getDescription());
-        incident.markResolved();
-    }
-
-    protected abstract String getHandlerName();
+    public abstract void process(Incident incident);
 }
