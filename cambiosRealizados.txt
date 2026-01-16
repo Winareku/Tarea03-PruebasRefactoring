@@ -1,0 +1,75 @@
+Refactoring: Encapsulamiento de lógica de negocio en Data Class (Move Method)
+Motivo: La clase Incident actuaba como una "Data Class" (solo getters/setters), exponiendo sus datos internos (severity) para que otras clases (Handlers) tomaran decisiones. Esto violaba el principio de encapsulamiento y Tell-Don't-Ask.
+Cambios realizados:
+- Incident.java: Se agregaron métodos de negocio `isLowSeverity()`, `isMediumSeverity()`, `isHighSeverity()` para encapsular las reglas de clasificación de severidad.
+- AnfitrionHandler.java: El método `canHandle` ahora invoca `incident.isLowSeverity()` en lugar de comparar `getSeverity() <= 2`.
+- ModeradorHandler.java: El método `canHandle` ahora invoca `incident.isMediumSeverity()` en lugar de comparar rangos manuales.
+- SoporteLegalHandler.java: El método `canHandle` ahora invoca `incident.isHighSeverity()` en lugar de comparar `getSeverity() > 5`.
+Resultado: Lógica de clasificación centralizada en el dominio (Incident) y reducción de acoplamiento en los Handlers.
+
+Refactoring: Simplificación de creación de objetos con Long Parameter List (Introduce Parameter Object)
+Motivo: El constructor de Reserva recibía demasiados parámetros (5) que viajaban juntos (Data Clumps). Se necesitaba agrupar estos datos para mejorar la legibilidad y facilitar el paso de mensajes.
+Cambios realizados:
+- DatosReserva.java: Se creó una nueva clase (Parameter Object) que encapsula unidad, huésped, fechas y precio. Actúa como un DTO (Data Transfer Object) auxiliar, lo cual justifica su estructura de Data Class en este contexto.
+- Reserva.java: El constructor ahora recibe un único objeto `DatosReserva` en lugar de 5 parámetros sueltos.
+- ReservaFacade.java: Se actualizó la creación de `Reserva` instanciando primero `DatosReserva`.
+Resultado: Código más limpio y manejo de parámetros agrupados de manera coherente.
+
+Refactoring: Descomposición de método monolítico (Extract Method)
+Motivo: El método `realizarReserva` presentaba el smell "Long Method", mezclando múltiples responsabilidades (verificación de políticas, disponibilidad, pago, creación de reserva, notificaciones) en un solo flujo.
+Cambios realizados:
+- ReservaFacade.java: Se extrajeron tres métodos privados para encapsular responsabilidades específicas:
+    - `cumpleRequisitos()`: Agrupa validaciones de políticas y disponibilidad.
+    - `procesarPago()`: Encapsula el proceso de cobro.
+    - `finalizarReserva()`: Maneja el bloqueo de la unidad, creación de la reserva y notificación.
+Resultado: El método `realizarReserva` ahora actúa como un orquestador de alto nivel, mejorando significativamente la legibilidad y mantenibilidad del flujo principal.
+
+Refactoring: Eliminación de dependencia indirecta (Hide Delegate)
+Motivo: `PreciosService` presentaba un smell de "Message Chain" al acceder a `unidad.getUnidadTipo().getPrecioBase()`, acoplándose innecesariamente a la estructura interna de `Unidad`.
+Cambios realizados:
+- Unidad.java: Se agregó el método delegado `getPrecioBase()` que redirige internamente a `unidadTipo.getPrecioBase()`.
+- PreciosService.java: Se modificaron las llamadas para usar directamente `unidad.getPrecioBase()`.
+Resultado: Se reduce el acoplamiento; `PreciosService` ya no necesita conocer la existencia de `UnidadTipo` ni su relación con `Unidad` para obtener el precio.
+
+Refactoring: Eliminación de clase innecesaria (Inline Class)
+Motivo: `PagoService` era una "Lazy Class" (Clase Vaga), ya que apenas contenía lógica propia (simples impresiones en consola y retorno de verdaderos) y añadía una capa de complejidad innecesaria.
+Cambios realizados:
+- ReservaFacade.java: Se movió la lógica simple de pagos directamente a `ReservaFacade`.
+- PagoService.java: Se eliminó el archivo.
+Resultado: Reducción de la cantidad de archivos y complejidad accidental; simplificación de la arquitectura al eliminar intermediarios vacíos.
+
+Refactoring: Limpieza de parámetros no utilizados (Remove Parameter)
+Motivo: `DisponibilidadService` tenía métodos (`verificarDisponibilidad`, `bloquearUnidad`) que recibían parámetros de fecha (`fechaInicio`, `fechaFin`) sin utilizarlos bajo la premisa de validación futura, lo cual constituye "Dead Code" engañoso.
+Cambios realizados:
+- DisponibilidadService.java: Se eliminaron los parámetros `fechaInicio` y `fechaFin` de los métodos afectados.
+- ReservaFacade.java: Se actualizaron las llamadas a `disponibilidadService` para coincidir con la nueva firma.
+Resultado: La firma de los métodos ahora refleja honestamente su comportamiento real (validación de estado actual, no por rango), eliminando la confusión para el lector.
+
+Refactoring: Eliminación de código duplicado en jerarquía (Pull Up Method / Template Method)
+Motivo: Los handlers (`AnfitrionHandler`, `ModeradorHandler`, `SoporteLegalHandler`) duplicaban la lógica de `process()` (imprimir mensaje y marcar resuelto), cambiando solo el nombre del rol.
+Cambios realizados:
+- IncidentHandler.java: Se implementó el método `process()` común (Pull Up) y se definió un método abstracto `getHandlerName()` (Template Method) para obtener el detalle variable.
+- Subclases de Handler: Se eliminó el método `process()` duplicado y se implementó `getHandlerName()` retornando el nombre correspondiente.
+Resultado: Eliminación de redundancia y centralización del algoritmo de procesamiento en la clase base.
+
+Refactoring: Eliminación de intermediario innecesario (Remove Middle Man)
+Motivo: `NotificationManager` actuaba como un "Middle Man" (Intermediario) que solo delegaba llamadas a los notificadores sin agregar valor, además de ser un Singleton que ocultaba dependencias.
+Cambios realizados:
+- ReservaFacade.java: Se modificó para interactuar directamente con la interfaz `INotification` (inicializada con `EmailNotification`), eliminando la dependencia del Singleton.
+- NotificationManager.java: Se eliminó la clase.
+Resultado: Simplificación de la arquitectura; el cliente habla directamente con la estrategia de notificación deseada.
+
+Refactoring: Reemplazo de Números Mágicos por Constantes (Replace Magic Number with Symbolic Constant)
+Motivo: El código en `PreciosService` y `PoliticasService` contenía literales numéricos (como 0.2, 7, 30, factores de conversión de tiempo) cuyo significado no era explícito, dificultando la comprensión y el mantenimiento.
+Cambios realizados:
+- PreciosService.java: Se extrajeron constantes como `PORCENTAJE_DEPOSITO`, `PORCENTAJE_TARIFAS_ADICIONALES` y `MILISEGUNDOS_POR_DIA`.
+- PoliticasService.java: Se definieron constantes para reglas de negocio como `CALIFICACION_MINIMA`, `DIAS_PLAZO_CORTO`, `PENALIZACION_ALTA`, entre otras.
+Resultado: El código es más legible y autodocumentado; los valores críticos de negocio están centralizados y nombrados claramente.
+
+Refactoring: Reemplazo de Primitivo por Objeto/Enum (Replace Primitive with Object)
+Motivo: La clase `Reserva` utilizaba una cadena de texto (String) para representar el estado ("CONFIRMADA", "CANCELADA"), lo cual es propenso a errores de tipeo y carece de seguridad de tipos (Primitive Obsession).
+Cambios realizados:
+- EstadoReserva.java: Se creó un Enum `EstadoReserva` con los valores válidos.
+- Reserva.java: Se cambió el tipo del atributo `estado` de String a `EstadoReserva`.
+- ReservaFacade.java: Se actualizaron las asignaciones para usar el Enum en lugar de literales de cadena.
+Resultado: Mayor seguridad de tipos y eliminación de errores por cadenas mal formadas.

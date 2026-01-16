@@ -1,5 +1,7 @@
 package main;
 
+import main.enums.EstadoReserva;
+
 import java.util.Date;
 
 public class Reserva {
@@ -9,7 +11,7 @@ public class Reserva {
     private Date fechaInicio;
     private Date fechaFin;
     private double precioTotal;
-    private String estado;
+    private EstadoReserva estado;
 
     public Reserva(DatosReserva datos) {
         this.id = "RES-" + System.currentTimeMillis();
@@ -18,7 +20,7 @@ public class Reserva {
         this.fechaInicio = datos.getFechaInicio();
         this.fechaFin = datos.getFechaFin();
         this.precioTotal = datos.getPrecioTotal();
-        this.estado = "CONFIRMADA";
+        this.estado = EstadoReserva.CONFIRMADA;
     }
 
     public String getId() {
@@ -53,11 +55,11 @@ public class Reserva {
         return precioTotal;
     }
 
-    public String getEstado() {
+    public EstadoReserva getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(EstadoReserva estado) {
         this.estado = estado;
     }
 }

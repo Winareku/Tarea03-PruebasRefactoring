@@ -81,7 +81,7 @@ public class ReservaFacade {
         boolean reembolsoExitoso = true; // Simulación
 
         if (reembolsoExitoso) {
-            reserva.setEstado("CANCELADA");
+            reserva.setEstado(EstadoReserva.CANCELADA);
             reserva.getUnidad().setEstado(EstadoUnidad.DISPONIBLE);
             return true;
         }
